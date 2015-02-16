@@ -1,0 +1,125 @@
+I want my GM script to fetch some redmine timesheet data.  Do to so I use `$.get()` or `$.ajax()`.  The script is fired within the same redmine instance it needs to get data from.
+
+When I load `https://code.credil.org/timesheet/report` via `$.get()`, the http satus code returned is `200 OK`.  But if I add GET parameters, I get `404 Not Found`.
+
+I've created a seperate Greasemonkey to undersand the behavior I'm seeing and understand what I'm doing wrong.  The console output is after the code.
+
+I've looked through the GM metadata block documentation.  I don't see a directive that would be responsible for the bahavior I'm seeing.
+
+    // ==UserScript==
+    // @name        Get timesheet
+    // @namespace   jlamUnbooked
+    // @description Test for getting the time sheet of a script
+    // @include     https://code.credil.org/*
+    // @version     1
+    // @grant       none
+    // ==/UserScript==
+    
+    
+    
+    console.log(new Error().lineNumber + "... ");
+    
+    
+    var url = "https://code.credil.org/timesheet/report";
+    
+        $.get(url, function () {
+            console.log(new Error().lineNumber + "... ");
+        } )
+        .error ( function (respObj) {
+            console.log(" Error with url without params " + url, respObj.status, respObj.statusText);
+        } )
+        .complete ( function (respObj) {
+            console.log(" .get finished without params with url " + url + " . Status: ", respObj.status);
+        } )
+        ;
+    
+    var url = "https://code.credil.org/timesheet/report?timesheet%5Bdate_from%5D=2015-02-16&timesheet%5Bdate_to%5D=2015-02-16&timesheet%5Busers%5D%5B%5D=419";
+    
+    
+    console.log(new Error().lineNumber + "... ");
+    
+        $.get(url, function () {
+            console.log(new Error().lineNumber + "... ");
+        } )
+        .error ( function (respObj) {
+            console.log(" Error with params with url " + url, respObj.status, respObj.statusText);
+        } )
+        .complete ( function (respObj) {
+            console.log(" .get finished with params with url " + url + " . Status: ", respObj.status);
+        } )
+        ;
+    
+    
+    var url = "https://code.credil.org/timesheet/report";
+    
+    
+    var d = new Date();
+    var month = d.getMonth()+1;
+    var day = d.getDate();
+    
+    var todayStrDashed = d.getFullYear() + '-' +
+        (month<10 ? '0' : '') + month + '-' +
+        (day<10 ? '0' : '') + day;
+    
+    
+    $.ajax(
+        {
+            type: "GET",
+            url: url,
+            error: function(jqXHR, textStatus, errorThrown) {console.log("Ajax request without params got " + errorThrown + " for " + url);},
+            success: function(msg)
+            {
+               console.log(new Error().lineNumber + "... ");
+                console.log("Ajax query work wtihout params for url " + url);
+    
+            }
+        });
+    
+    
+    $.ajax(
+        {
+            type: "GET",
+            url: url,
+            data: {
+                timesheet: {date_from: todayStrDashed, date_to: todayStrDashed}
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+              console.log(new Error().lineNumber + "... ");
+               console.log("Ajax request with params got " + errorThrown + " for " + url);
+            },
+            success: function(msg)
+            {
+               console.log(new Error().lineNumber + "... ");
+                console.log("Ajax query work with params for url " + url);
+    
+            }
+        });
+
+What I get in the console:
+
+     Get_timesheet.user.js:12
+
+    "31... " Get_timesheet.user.js:31
+
+    L'utilisation de « getPreventDefault() » est obsolète. Utiliser « defaultPrevented » à la place. jquery-1.8.3-ui-1.9.2-ujs-2.0.3.js:2
+
+    " Error with params with url https://code.credil.org/timesheet/report" 404 "Not Found" Get_timesheet.user.js:37
+
+    " .get finished with params with url https://code.credil.org/timesheet/report . Status: " 404 Get_timesheet.user.js:40
+
+    "18... " Get_timesheet.user.js:18
+
+    " .get finished without params with url https://code.credil.org/timesheet/report . Status: " 200 Get_timesheet.user.js:24
+
+    "79... " Get_timesheet.user.js:79
+
+    "Ajax request with params got Not Found for https://code.credil.org/timesheet/report" Get_timesheet.user.js:80
+
+    "64... " Get_timesheet.user.js:64
+
+    "Ajax query work wtihout params for url https://code.credil.org/timesheet/report"
+
+
+As you can see, the get querry wtihout get parameters worked.  Adding get parameters however and the feth results in a 404.
+
+

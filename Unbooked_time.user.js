@@ -24,7 +24,6 @@ arrayOfTimes.sort();
 var minTime = arrayOfTimes[0];
 
 var d = new Date();
-
 var month = d.getMonth()+1;
 var day = d.getDate();
 
@@ -39,25 +38,44 @@ var timeEnd = $.now();
 var hourDiff = Math.round((timeEnd - timeStart)/1000/60/60*100)/100;             
 
 //2. Get the amount of hours logged today
+var todayStrDashed = d.getFullYear() + '-' +
+    (month<10 ? '0' : '') + month + '-' +
+    (day<10 ? '0' : '') + day;
+
 $("#header").append(new Error().lineNumber + "... ");
 
 var url = "https://code.credil.org/timesheet/report?timesheet%5Bdate_from%5D=2015-02-16&timesheet%5Bdate_to%5D=2015-02-16&timesheet%5Busers%5D%5B%5D=419 #time_entries > h2:nth-child(2)";
 var url = "https://code.credil.org/timesheet/report?timesheet[date_from]=2015-02-16&timesheet[date_to]=2015-02-16&timesheet[users][]=419";
-
-
+var url = "https://code.credil.org/timesheet/report?timesheet%5Bdate_from%5D=2015-02-16&timesheet%5Bdate_to%5D=2015-02-16&timesheet%5Busers%5D%5B%5D=419";
 
 
 $("#header").append(new Error().lineNumber + "... ");
 
+
+    $.get(url, function () {
+        $("#header").append(new Error().lineNumber + "... ");
+    } )
+    .error ( function (respObj) {
+        $("#header").append(" Error! ", respObj.status, respObj.statusText);
+    } )
+    .complete ( function (respObj) {
+        $("#header").append(" AJAX Complete. Status: ", respObj.status);
+    } )
+    ;
+
+
 $.ajax(
     {
         type: "GET",
+        data: {
+            "timesheet": {"date_from": todayStrDashed}
+        },
         url: url,
         error: function(jqXHR, textStatus, errorThrown) {$("#header").append("Got " + errorThrown + " for " + url);},
         success: function(msg)
         {
            $("#header").append(new Error().lineNumber + "... ");
-            $("#header").append(msg);
+            $("#header").append("Worked for url " + url);
 
         }
     });

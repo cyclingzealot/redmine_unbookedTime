@@ -7,90 +7,117 @@
 // @grant       none
 // ==/UserScript==
   
+
+// Now do the jlam stuff
+console.log(new Error().lineNumber + "... ");
+
+
 $("#header").append("Unbooked time GM script running...");
 
 //1. Calculate the amount of hours since the earliest ticket logging 
-var arrayOfTimesElemns = $("#activity > dl:nth-child(2) > dt.time-entry > span:nth-child(1)");
 
-var arrayOfTimes = [];
+var myTimeEntries = 'https://code.credil.org/users/419';
 
-for(var i = 0, l = arrayOfTimesElemns.length; i < l; i++) {
-    arrayOfTimes.push( $(arrayOfTimesElemns[i]).text());
-}
+$.ajax({
+	url: myTimeEntries,
+	dataType: "html",
+	success: function(data) {
+		console.log(new Error().lineNumber + "... ");
+		var arrayOfTimes = [];
 
-// Sort it
-arrayOfTimes.sort();
+		console.log(new Error().lineNumber + "... ");		
+		
+		var elems = $(data).find('#activity > dl:nth-child(2) > dt.time-entry > span:nth-child(1)');
+		
+		for(var i = 0, l = elems.length; i < l; i++) {
+			console.log(new Error().lineNumber + "... ");
+		    arrayOfTimes.push( $(elems[i]).text());
+		}
+		
 
-var minTime = arrayOfTimes[0];
+		console.log(new Error().lineNumber + "... ");
 
-var d = new Date();
-var month = d.getMonth()+1;
-var day = d.getDate();
+		// Sort it
+		arrayOfTimes.sort();
 
-var todayStr = d.getFullYear() + '/' +
-    (month<10 ? '0' : '') + month + '/' +
-    (day<10 ? '0' : '') + day;
+		console.log(new Error().lineNumber + "... ");
+		
+		var minTime = arrayOfTimes[0];
 
-//create date format          
-var timeStart = new Date(todayStr + ' ' + minTime);
-var timeEnd = $.now();
+		var d = new Date();
+		var month = d.getMonth()+1;
+		var day = d.getDate();
 
-var hourDiff = Math.round((timeEnd - timeStart)/1000/60/60*100)/100;             
+		console.log(new Error().lineNumber + "... ");
 
-//2. Get the amount of hours logged today
-var todayStrDashed = d.getFullYear() + '-' +
-    (month<10 ? '0' : '') + month + '-' +
-    (day<10 ? '0' : '') + day;
+		var todayStr = d.getFullYear() + '/' +
+		    (month<10 ? '0' : '') + month + '/' +
+		    (day<10 ? '0' : '') + day;
 
-$("#header").append(new Error().lineNumber + "... ");
+		//create date format          
+		var timeStart = new Date(todayStr + ' ' + minTime);
+		var timeEnd = $.now();
 
-var url = "https://code.credil.org/timesheet/report?timesheet%5Bdate_from%5D=2015-02-16&timesheet%5Bdate_to%5D=2015-02-16&timesheet%5Busers%5D%5B%5D=419 #time_entries > h2:nth-child(2)";
-var url = "https://code.credil.org/timesheet/report?timesheet[date_from]=2015-02-16&timesheet[date_to]=2015-02-16&timesheet[users][]=419";
-var url = "https://code.credil.org/timesheet/report?timesheet%5Bdate_from%5D=2015-02-16&timesheet%5Bdate_to%5D=2015-02-16&timesheet%5Busers%5D%5B%5D=419";
+		var hourDiff = Math.round((timeEnd - timeStart)/1000/60/60*100)/100;             
+
+		
+		//2. Get total hours done.
+		var todayStrWtihHyphen = d.getFullYear() + '-' +
+	    (month<10 ? '0' : '') + month + '-' +
+	    (day<10 ? '0' : '') + day;
+		
+		var totalTimeURL = 'https://code.credil.org/timesheet/report?timesheet[date_from]='+ todayStrWtihHyphen +'&timesheet[date_to]='+ todayStrWtihHyphen +'&timesheet[users][]=419';
+
+		console.log(new Error().lineNumber + "... ");
+
+		$.ajax({
+			url: totalTimeURL,
+			dataType: "html",
+			beforeSend: function(xhr) {
+		        xhr.setRequestHeader(
+		            'X-Requested-With',
+		            {
+		                toString: function() { return ''; }
+		            }
+		        );
+		    },
+			success: function(data) {
+				console.log("SUCCESS!! with url " + totalTimeURL);
+				var timeHeader = $(data).find('#time_entries > h2:nth-child(2)');
+				
+				console.log(timeHeader.text());
+				
+				var totalTime = timeHeader.text().match('[0-9]+\,[0-9]*')[0];
+				
+				var unbookedTime = parseFloat(hourDiff) - parseFloat(totalTime);
+				
+				console.log('UnbookedTime, hourDiff, totalTime: ' + unbookedTime + ', ' + hourDiff + ', ' + totalTime);
+				
+				var stringToAppend = '<div align="right">'+ unbookedTime +'</div>';
+
+				$("#header").append(stringToAppend);
+
+				console.log(new Error().lineNumber + "... ");
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+				console.log("Get total time failed with url " + totalTimeURL);
+			}
+		});
+		
+		
 
 
-$("#header").append(new Error().lineNumber + "... ");
+	},
+	error: function(jqXHR, textStatus, errorThrown) {
+		console.log(new Error().lineNumber + "... ");
+		console.log('Get my times unsuccesfull');
+	}
+});
 
 
-    $.get(url, function () {
-        $("#header").append(new Error().lineNumber + "... ");
-    } )
-    .error ( function (respObj) {
-        $("#header").append(" Error! ", respObj.status, respObj.statusText);
-    } )
-    .complete ( function (respObj) {
-        $("#header").append(" AJAX Complete. Status: ", respObj.status);
-    } )
-    ;
 
 
-$.ajax(
-    {
-        type: "GET",
-        data: {
-            "timesheet": {"date_from": todayStrDashed}
-        },
-        url: url,
-        error: function(jqXHR, textStatus, errorThrown) {$("#header").append("Got " + errorThrown + " for " + url);},
-        success: function(msg)
-        {
-           $("#header").append(new Error().lineNumber + "... ");
-            $("#header").append("Worked for url " + url);
 
-        }
-    });
+console.log(new Error().lineNumber + "... ");
 
-var hoursSpent = 'None';
-
-
-$("#header").append(new Error().lineNumber + "... ");
-
-$("#header").append(hoursSpent);
-
-$("#header").append(new Error().lineNumber + "... ");
-
-
-var stringToAppend = '<div align="right">'+ hourDiff +'</div>';
-
-$("#header").append(stringToAppend);
 
